@@ -2,12 +2,12 @@ import csv
 import io
 import streamlit as st
 
-st.title("CSV Processor (Selectable Headers + Custom Delimiter)")
+st.title("CSV Processor (Preserve Quotes Exactly)")
 
 def normalize(h: str) -> str:
     return h.replace("\ufeff", "").strip()
 
-def process_csv(file, selected_headers, out_delim="$", quotechar='"'):
+def process_csv(file, selected_headers, out_delim="$"):
     text = file.getvalue().decode("utf-8")
     reader = csv.reader(io.StringIO(text), delimiter=";", quotechar="'", escapechar='\\')
 
@@ -15,8 +15,8 @@ def process_csv(file, selected_headers, out_delim="$", quotechar='"'):
     writer = csv.writer(
         output,
         delimiter=out_delim,
-        quotechar=quotechar,
-        quoting=csv.QUOTE_MINIMAL,
+        quoting=csv.QUOTE_NONE,   # ✅ do not add quotes
+        escapechar="",            # no escaping
         lineterminator="\n"
     )
 
@@ -44,7 +44,6 @@ def process_csv(file, selected_headers, out_delim="$", quotechar='"'):
 
 uploaded_file = st.file_uploader("Upload a CSV file", type=["csv"])
 out_delim = st.text_input("Output delimiter", value="$")
-out_quotechar = st.text_input("Output quote character", value='"')
 
 if uploaded_file:
     # Read headers from file
@@ -59,7 +58,7 @@ if uploaded_file:
 
         if selected:
             if st.button("Process"):
-                result = process_csv(uploaded_file, selected, out_delim=out_delim, quotechar=out_quotechar)
+                result = process_csv(uploaded_file, selected, out_delim=out_delim)
                 if result:
                     st.text("Preview:")
                     st.text("\n".join(result.splitlines()[:10]))
