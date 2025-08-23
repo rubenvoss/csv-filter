@@ -15,10 +15,11 @@ def process_csv(file, selected_headers, out_delim="$"):
     writer = csv.writer(
         output,
         delimiter=out_delim,
-        quoting=csv.QUOTE_NONE,   # ✅ do not add quotes
-        escapechar="",            # no escaping
+        quoting=csv.QUOTE_NONE,   # ✅ no quoting at all
+        escapechar=None,          # ✅ must be None
         lineterminator="\n"
     )
+
 
     try:
         raw_headers = next(reader)
