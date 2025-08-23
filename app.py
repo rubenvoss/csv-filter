@@ -2,30 +2,32 @@ import csv
 import io
 import streamlit as st
 
-st.title("CSV Column Filter")
-
-uploaded_file = st.file_uploader("Upload a CSV file", type=["csv"])
-output_delimiter = st.text_input("Output delimiter", value="$")
+st.title("CSV Processor (Selectable Headers + Custom Delimiter)")
 
 def normalize(h: str) -> str:
     return h.replace("\ufeff", "").strip()
 
-def process_csv(file, selected_headers, delimiter="$"):
+def process_csv(file, selected_headers, out_delim="$", quotechar='"'):
     text = file.getvalue().decode("utf-8")
     reader = csv.reader(io.StringIO(text), delimiter=";", quotechar="'", escapechar='\\')
 
     output = io.StringIO()
-    writer = csv.writer(output, delimiter=delimiter, lineterminator="\n")
+    writer = csv.writer(
+        output,
+        delimiter=out_delim,
+        quotechar=quotechar,
+        quoting=csv.QUOTE_MINIMAL,
+        lineterminator="\n"
+    )
 
     try:
         raw_headers = next(reader)
         headers = [normalize(h) for h in raw_headers]
         header_map = {h: i for i, h in enumerate(headers)}
 
-        # which indices to keep
         indices = [header_map[h] for h in selected_headers if h in header_map]
 
-        # write header row
+        # Write header row
         writer.writerow(selected_headers)
 
         for row in reader:
@@ -40,22 +42,25 @@ def process_csv(file, selected_headers, delimiter="$"):
 
     return output.getvalue()
 
+uploaded_file = st.file_uploader("Upload a CSV file", type=["csv"])
+out_delim = st.text_input("Output delimiter", value="$")
+out_quotechar = st.text_input("Output quote character", value='"')
+
 if uploaded_file:
-    # read headers only
+    # Read headers from file
     reader = csv.reader(io.StringIO(uploaded_file.getvalue().decode("utf-8")),
                         delimiter=";", quotechar="'", escapechar='\\')
     try:
         raw_headers = next(reader)
         headers = [normalize(h) for h in raw_headers]
 
-        # let user select columns
+        # Let user pick headers
         selected = st.multiselect("Select columns to keep", headers, default=headers)
 
         if selected:
             if st.button("Process"):
-                result = process_csv(uploaded_file, selected, delimiter=output_delimiter)
+                result = process_csv(uploaded_file, selected, out_delim=out_delim, quotechar=out_quotechar)
                 if result:
-                    # preview first rows
                     st.text("Preview:")
                     st.text("\n".join(result.splitlines()[:10]))
 
