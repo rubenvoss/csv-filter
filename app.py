@@ -2,7 +2,7 @@ import csv
 import io
 import streamlit as st
 
-st.title("CSV Processor (Preserve Quotes Exactly)")
+st.title("CSV Processor (Preserve Formatting)")
 
 def normalize(h: str) -> str:
     return h.replace("\ufeff", "").strip()
@@ -12,14 +12,6 @@ def process_csv(file, selected_headers, out_delim="$"):
     reader = csv.reader(io.StringIO(text), delimiter=";", quotechar="'", escapechar='\\')
 
     output = io.StringIO()
-    writer = csv.writer(
-        output,
-        delimiter=out_delim,
-        quoting=csv.QUOTE_NONE,   # ✅ no quoting at all
-        escapechar=None,          # ✅ must be None
-        lineterminator="\n"
-    )
-
 
     try:
         raw_headers = next(reader)
@@ -29,13 +21,13 @@ def process_csv(file, selected_headers, out_delim="$"):
         indices = [header_map[h] for h in selected_headers if h in header_map]
 
         # Write header row
-        writer.writerow(selected_headers)
+        output.write(out_delim.join(selected_headers) + "\n")
 
         for row in reader:
             if not row or all(cell == "" for cell in row):
                 continue
             filtered = [row[i] if i < len(row) else "" for i in indices]
-            writer.writerow(filtered)
+            output.write(out_delim.join(filtered) + "\n")
 
     except Exception as e:
         st.error(f"Error: {e}")
